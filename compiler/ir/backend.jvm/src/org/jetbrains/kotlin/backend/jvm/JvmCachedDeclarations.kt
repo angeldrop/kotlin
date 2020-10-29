@@ -131,6 +131,14 @@ class JvmCachedDeclarations(
                     ?.replaceThisByStaticReference(this@JvmCachedDeclarations, oldParent, oldParent.thisReceiver!!)
                     ?.patchDeclarationParents(this) as IrExpressionBody?
                 origin = if (irProperty.parentAsClass.isCompanion) JvmLoweredDeclarationOrigin.COMPANION_PROPERTY_BACKING_FIELD else origin
+                if (oldParent != parent && oldParent.visibility == DescriptorVisibilities.PRIVATE) {
+                    context.createIrBuilder(this.symbol).run {
+                        annotations = filterOutAnnotations(
+                            DeprecationResolver.JAVA_DEPRECATED,
+                            annotations
+                        ) + irCall(this@JvmCachedDeclarations.context.ir.symbols.javaLangDeprecatedConstructorWithDeprecatedFlag)
+                    }
+                }
             }
         }
     }
@@ -183,7 +191,7 @@ class JvmCachedDeclarations(
                     !it.annotations.hasAnnotation(DeprecationResolver.JAVA_DEPRECATED)
                 ) {
                     this@JvmCachedDeclarations.context.createIrBuilder(it.symbol).run {
-                        it.annotations += irCall(this@JvmCachedDeclarations.context.ir.symbols.javaLangDeprecatedConstructor)
+                        it.annotations += irCall(this@JvmCachedDeclarations.context.ir.symbols.javaLangDeprecatedConstructorWithDeprecatedFlag)
                     }
                 }
 
